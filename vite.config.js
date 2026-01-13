@@ -5,4 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/spk-isp-batam/',
+  build: {
+    outDir: 'dist',
+    // Copy file .nojekyll ke dist
+    copyPublicDir: true
+  },
+  publicDir: 'public'
 })
