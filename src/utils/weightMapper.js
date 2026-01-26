@@ -5,12 +5,10 @@ import { useCases, priorities } from '../data/useCases';
  * Combines use case weights with priority adjustments
  */
 export function mapPreferencesToWeights(preferences) {
-  // Get base weights from use case
   const useCase = useCases.find(uc => uc.value === preferences.useCase);
   const priority = priorities.find(p => p.value === preferences.priority);
   
   if (!useCase || !priority) {
-    // Default balanced weights
     return {
       downloadSpeed: 0.25,
       uploadSpeed: 0.20,
@@ -21,7 +19,6 @@ export function mapPreferencesToWeights(preferences) {
     };
   }
   
-  // Blend use case weights (60%) with priority weights (40%)
   const blendedWeights = {};
   const criteria = ['downloadSpeed', 'uploadSpeed', 'price', 'serviceQuality', 'coverage', 'stability'];
   
@@ -31,7 +28,6 @@ export function mapPreferencesToWeights(preferences) {
       (priority.weightAdjustment[criterion] * 0.4);
   });
   
-  // Normalize to ensure sum = 1
   const sum = Object.values(blendedWeights).reduce((a, b) => a + b, 0);
   Object.keys(blendedWeights).forEach(key => {
     blendedWeights[key] = blendedWeights[key] / sum;
@@ -46,7 +42,6 @@ export function mapPreferencesToWeights(preferences) {
 export function filterByLocation(ispData, location) {
   if (!location) return ispData;
   
-  // Convert location value to label format
   const locationLabel = location
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -62,35 +57,13 @@ export function filterByLocation(ispData, location) {
  */
 export function filterByBudget(ispData, budget) {
   return ispData.filter(isp => 
-    isp.criteria.price <= budget * 1.15 // Allow 15% tolerance
+    isp.criteria.price <= budget * 1.15
   );
 }
 
 /**
- * Complete filtering and calculation pipeline
+ * Get criteria types (benefit or cost)
  */
-export function processRecommendation(ispData, preferences) {
-  // Filter by location
-  let filteredISPs = filterByLocation(ispData, preferences.location);
-  
-  // Filter by budget
-  filteredISPs = filterByBudget(filteredISPs, preferences.budget);
-  
-  // If no ISPs match, relax filters
-  if (filteredISPs.length === 0) {
-    console.warn('No ISPs match strict filters, relaxing constraints');
-    filteredISPs = ispData;
-  }
-  
-  // Get weights from preferences
-  const weights = mapPreferencesToWeights(preferences);
-  
-  return {
-    filteredISPs,
-    weights
-  };
-}
-
 export function getCriteriaTypes() {
   return {
     downloadSpeed: 'benefit',
@@ -99,5 +72,43 @@ export function getCriteriaTypes() {
     serviceQuality: 'benefit',
     coverage: 'benefit',
     stability: 'benefit'
+  };
+}
+
+/**
+ * Complete filtering and calculation pipeline with detailed logging
+ */
+export function processRecommendation(ispData, preferences) {
+  console.log('=== FILTERING PROCESS ===');
+  console.log('User preferences:', preferences);
+  console.log('Initial ISPs count:', ispData.length);
+  
+  // Step 1: Filter by location
+  let filteredISPs = filterByLocation(ispData, preferences.location);
+  console.log(`After location filter (${preferences.location}):`, filteredISPs.length, 'ISPs');
+  console.log('Remaining ISPs:', filteredISPs.map(isp => isp.name));
+  
+  // Step 2: Filter by budget
+  const beforeBudget = filteredISPs.length;
+  filteredISPs = filterByBudget(filteredISPs, preferences.budget);
+  console.log(`After budget filter (Rp ${preferences.budget.toLocaleString('id-ID')}):`, filteredISPs.length, 'ISPs');
+  console.log('Remaining ISPs:', filteredISPs.map(isp => isp.name));
+  
+  // Step 3: Fallback if empty
+  if (filteredISPs.length === 0) {
+    console.warn('⚠️ No ISPs match strict filters, relaxing constraints');
+    console.warn(`Reason: ${beforeBudget === 0 ? 'No ISPs in selected location' : 'No ISPs within budget'}`);
+    filteredISPs = ispData;
+    console.log('Fallback: Using all', ispData.length, 'ISPs');
+  }
+  
+  // Get weights
+  const weights = mapPreferencesToWeights(preferences);
+  console.log('Calculated weights:', weights);
+  console.log('Weight sum:', Object.values(weights).reduce((a, b) => a + b, 0));
+  
+  return {
+    filteredISPs,
+    weights
   };
 }

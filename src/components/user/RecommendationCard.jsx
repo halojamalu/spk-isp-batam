@@ -1,6 +1,7 @@
 import React from 'react';
+import { formatPreferenceValue, isSingleISPScenario, getSingleISPMessage } from '../../utils/helpers';
 
-function RecommendationCard({ results, preferences }) {
+function RecommendationCard({ topResult, topISP, otherResults, ranking, ispDataMap }) {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -9,9 +10,11 @@ function RecommendationCard({ results, preferences }) {
       maximumFractionDigits: 0
     }).format(amount);
   };
+  
+  const topISPData = topISP;
 
   // Empty state
-  if (!results) {
+  if (!topISPData) {
     return (
       <div className="bg-white rounded-card shadow-card p-6 h-full flex flex-col items-center justify-center text-center">
         <div className="text-6xl mb-4">🔍</div>
@@ -25,8 +28,6 @@ function RecommendationCard({ results, preferences }) {
     );
   }
 
-  const topISP = results.ranking[0];
-  const topISPData = results.ispDataMap[topISP.id];
 
   return (
     <div className="bg-white rounded-card shadow-card p-6">
@@ -54,23 +55,33 @@ function RecommendationCard({ results, preferences }) {
           </div>
         </div>
 
-        {/* Score */}
-        <div className="bg-white rounded-lg p-4 mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-semibold text-gray-600">
+        {/* Skor Kesesuaian */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">
               Skor Kesesuaian
             </span>
             <span className="text-2xl font-bold text-primary">
-              {(topISP.preferenceValue * 100).toFixed(0)}%
+              {formatPreferenceValue(topISP.preferenceValue)}%
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
             <div
-              className="bg-primary h-3 rounded-full transition-all"
-              style={{ width: `${topISP.preferenceValue * 100}%` }}
-            />
+              className="bg-primary h-3 rounded-full transition-all duration-500"
+              style={{ width: `${formatPreferenceValue(topISP.preferenceValue)}%` }}
+            ></div>
           </div>
         </div>
+
+        {/* Single ISP Info */}
+        {isSingleISPScenario(ranking) && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
+            <span className="text-blue-600 text-lg">ℹ️</span>
+            <p className="text-sm text-blue-800">
+              {getSingleISPMessage()}
+            </p>
+          </div>
+        )}
 
         {/* Key Features */}
         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -112,8 +123,8 @@ function RecommendationCard({ results, preferences }) {
           Pilihan Lainnya
         </h4>
         <div className="space-y-3">
-          {results.ranking.slice(1, 4).map((isp, index) => {
-            const ispData = results.ispDataMap[isp.id];
+          {otherResults.map((isp, index) => {
+            const ispData = ispDataMap[isp.id];
             return (
               <div
                 key={isp.id}
@@ -147,7 +158,7 @@ function RecommendationCard({ results, preferences }) {
 
       {/* View All Button */}
       <button className="w-full mt-4 border-2 border-gray-300 hover:border-primary text-gray-700 font-semibold py-3 rounded-lg transition-all">
-        Lihat Semua ISP (6)
+        Lihat Semua ISP ({ranking.length})
       </button>
     </div>
   );

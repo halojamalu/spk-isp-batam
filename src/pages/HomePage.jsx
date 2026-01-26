@@ -18,14 +18,27 @@ function HomePage() {
         const criteriaTypes = getCriteriaTypes();
         const topsisResult = calculateTOPSIS(filteredISPs, weights, criteriaTypes);
         
+        // IMPORTANT: Create ispDataMap from FILTERED ISPs, not all ispData
         const ispDataMap = {};
-        ispData.forEach(isp => {
+        filteredISPs.forEach(isp => {
           ispDataMap[isp.id] = isp;
         });
         
+        // ALSO keep original for reference
+        const allISPMap = {};
+        ispData.forEach(isp => {
+          allISPMap[isp.id] = isp;
+        });
+        
+        console.log('=== DATA MAP CREATION ===');
+        console.log('Filtered ISPs:', filteredISPs.map(i => ({id: i.id, name: i.name})));
+        console.log('ispDataMap keys:', Object.keys(ispDataMap));
+        console.log('Ranking IDs:', topsisResult.ranking.map(r => r.id));
+        
         const results = {
           ...topsisResult,
-          ispDataMap,
+          ispDataMap: ispDataMap,  // Use filtered map
+          allISPMap: allISPMap,    // Keep all for reference
           preferences
         };
         

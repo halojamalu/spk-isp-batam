@@ -151,13 +151,28 @@ export function calculateDistances(weightedData, idealPositive, idealNegative) {
 }
 
 /**
- * Step 5: Calculate Preference Values and Ranking
- * V = D- / (D+ + D-)
+ * Calculate preference values and ranking
+ * Handles special case when only 1 ISP available
  */
 export function calculatePreferenceValues(distances) {
- console.log('=== STEP 5: PREFERENCE VALUES & RANKING ===');
- 
-    const preferences = distances.map(dist => {
+  console.log('=== STEP 5: PREFERENCE VALUES & RANKING ===');
+  
+  // Special case: Only 1 ISP available
+  if (distances.length === 1) {
+    console.warn('⚠️ Only 1 ISP available - assigning V = 1.0 (100%)');
+    
+    return [{
+      id: distances[0].id,
+      name: distances[0].name,
+      distancePositive: 0,
+      distanceNegative: 0,
+      preferenceValue: 1.0,  // 100% - only available option
+      rank: 1
+    }];
+  }
+  
+  // Normal case: 2+ ISPs
+  const preferences = distances.map(dist => {
     const preferenceValue = dist.distanceNegative / 
                            (dist.distancePositive + dist.distanceNegative);
     
@@ -173,11 +188,11 @@ export function calculatePreferenceValues(distances) {
   // Sort by preference value (descending)
   preferences.sort((a, b) => b.preferenceValue - a.preferenceValue);
   
-  // Add ranking
+  // Assign ranks
   preferences.forEach((pref, index) => {
     pref.rank = index + 1;
   });
-
+  
   console.log('Final Ranking:');
   console.table(preferences);
   
